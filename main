@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Christmas Blue Night</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            display: block;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ccff; /* Blue text */
+            font-size: 20px;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            text-shadow: 0 0 10px #00ccff;
+        }
+        #ui {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading">Đang tạo hiệu ứng Merry Christmas...</div>
+    <div id="ui">Drag to rotate • Scroll to zoom</div>
+
+    <!-- Import Three.js từ CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- CẤU HÌNH ---
+        const CONFIG = {
+            particleCount: 300, 
+            speed: 0.04
+        };
+
+        // --- KHỞI TẠO SCENE ---
+        const scene = new THREE.Scene();
+        // Sương mù xanh đen huyền bí
+        scene.fog = new THREE.FogExp2(0x000510, 0.02);
+        scene.background = new THREE.Color(0x000510);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.z = 12;
+        camera.position.y = 3;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0;
+
+        // --- HÀM TẠO TEXTURE KẾT HỢP (TIM TRƯỚC - CHỮ SAU) ---
+        function createCompositeTexture() {
+            const canvas = document.createElement('canvas');
+            // Tăng chiều rộng để chứa cả tim và chữ
+            canvas.width = 512; 
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Vẽ Trái Tim (Bên trái/Trước)
+            const hx = 60, hy = 64; // Vị trí tim
+            const scale = 1.2;
+            ctx.save();
+            ctx.translate(hx, hy);
+            ctx.scale(scale, scale);
+            ctx.fillStyle = '#ff0055'; // Đỏ hồng
+            ctx.shadowColor = "#ff0000"; // Glow đỏ
+            ctx.shadowBlur = 20;
+            
+            ctx.beginPath();
+            // Vẽ hình tim bằng bezier curves
+            ctx.moveTo(0, 0 + 15);
+            ctx.bezierCurveTo(0 - 20, 0 + 5, 0 - 20, 0 - 20, 0, 0 - 10);
+            ctx.bezierCurveTo(0 + 20, 0 - 20, 0 + 20, 0 + 5, 0, 0 + 15);
+            ctx.fill();
+            ctx.restore();
+
+            // 2. Vẽ Chữ "Merry Christmas" (Bên phải/Sau)
+            ctx.font = "bold 40px 'Arial'"; // Font to hơn
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "#00ccff"; // Xanh dương
+            
+            // Glow xanh dương cho chữ
+            ctx.shadowColor = "#00aaff"; 
+            ctx.shadowBlur = 25;
+            
+            // Vẽ chữ lệch sang phải để nằm sau trái tim
+            ctx.fillText("Merry Christmas", 110, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            // Texture cần update khi load
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // --- TẠO VẬT THỂ RƠI ---
+        const particles = [];
+        // Hình chữ nhật dài để chứa cả cụm "Tim + Chữ"
+        const geometry = new THREE.PlaneGeometry(4, 1); 
+
+        // Tạo texture duy nhất: Tim + Merry Christmas
+        const compositeTexture = createCompositeTexture();
+        const material = new THREE.MeshBasicMaterial({ 
+            map: compositeTexture, 
+            transparent: true, 
+            opacity: 1,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+
+        for (let i = 0; i < CONFIG.particleCount; i++) {
+            const mesh = new THREE.Mesh(geometry, material);
+
+            mesh.position.set(
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 30,
+                (Math.random() - 0.5) * 20
+            );
+            
+            mesh.userData = {
+                velocity: Math.random() * 0.05 + 0.02, // Tốc độ rơi
+                drift: (Math.random() - 0.5) * 0.02,   // Độ trôi ngang
+                swaySpeed: Math.random() * 2 + 1       // Tốc độ lắc lư
+            };
+            
+            // Random kích thước một chút cho tự nhiên
+            const scale = Math.random() * 0.5 + 0.5;
+            mesh.scale.set(scale, scale, scale);
+            
+            // Luôn hướng về camera ngay từ đầu
+            mesh.lookAt(camera.position);
+
+            scene.add(mesh);
+            particles.push(mesh);
+        }
+
+        // --- ÁNH SÁNG ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        
+        // Đèn PointLight màu xanh dương
+        const pointLight = new THREE.PointLight(0x00ccff, 2, 50);
+        pointLight.position.set(0, 5, 0);
+        scene.add(pointLight);
+
+        // --- XỬ LÝ RESIZE ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.getElementById('loading').style.opacity = 0;
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // Hiệu ứng vật thể rơi
+            particles.forEach(p => {
+                p.position.y -= p.userData.velocity;
+                
+                // Hiệu ứng lắc lư (sway) như lá rơi
+                p.position.x += Math.sin(time * p.userData.swaySpeed + p.position.y) * 0.01 + p.userData.drift;
+                
+                // Luôn hướng mặt về phía camera để chữ không bị ngược quá nhiều
+                p.lookAt(camera.position);
+
+                // Reset khi rơi xuống đáy
+                if (p.position.y < -15) {
+                    p.position.y = 15;
+                    p.position.x = (Math.random() - 0.5) * 20;
+                    p.position.z = (Math.random() - 0.5) * 20;
+                }
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
