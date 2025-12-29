@@ -37,7 +37,7 @@
 </head>
 <body>
 
-    <div id="loading">Đang tạo hiệu ứng Bài Ca...Đang 
+    <div id="loading">Đang tạo hiệu ứng Merry Christmas...</div>
     <div id="ui">Drag to rotate • Scroll to zoom</div>
 
     <!-- Import Three.js từ CDN -->
@@ -106,7 +106,7 @@
             ctx.fill();
             ctx.restore();
 
-            // 2. Vẽ Chữ "Bài Ca" (Bên phải/Sau)
+            // 2. Vẽ Chữ "Merry Christmas" (Bên phải/Sau)
             ctx.font = "bold 40px 'Arial'"; // Font to hơn
             ctx.textAlign = "left";
             ctx.textBaseline = "middle";
@@ -117,7 +117,7 @@
             ctx.shadowBlur = 25;
             
             // Vẽ chữ lệch sang phải để nằm sau trái tim
-            ctx.fillText("Bài Ca", 110, 64);
+            ctx.fillText("Merry Christmas", 110, 64);
 
             const texture = new THREE.CanvasTexture(canvas);
             // Texture cần update khi load
@@ -130,7 +130,7 @@
         // Hình chữ nhật dài để chứa cả cụm "Tim + Chữ"
         const geometry = new THREE.PlaneGeometry(4, 1); 
 
-        // Tạo texture duy nhất: Tim + Bài Ca
+        // Tạo texture duy nhất: Tim + Merry Christmas
         const compositeTexture = createCompositeTexture();
         const material = new THREE.MeshBasicMaterial({ 
             map: compositeTexture, 
